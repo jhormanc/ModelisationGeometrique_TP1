@@ -40,7 +40,10 @@
  * This is a simple, introductory OpenGL program.
  */
 #include <GL/glut.h>
-#include "glm/vec3.hpp"
+#include "glm/glm/vec3.hpp"
+#include <math.h>
+
+#define M_PI 3.14159265358979323846
 
 const glm::vec3 white(255.0f, 255.0f, 255.0f);
 const glm::vec3 black(0.0f, 0.0f, 0.0f);
@@ -48,7 +51,7 @@ const glm::vec3 green(0.0f, 255.0f, 0.0f);
 const glm::vec3 blue(0.0f, 0.0f, 255.0f);
 const glm::vec3 red(255.0f, 0.0f, 0.0f);
 
-void drawTriangleRectIsocele(const glm::vec3 &a, const float &l, const glm::vec3 &color)
+void drawTriangleRectIsocele(const glm::vec3 &a, const float l, const glm::vec3 &color)
 {
 	glBegin(GL_LINE_LOOP);
 
@@ -61,41 +64,119 @@ void drawTriangleRectIsocele(const glm::vec3 &a, const float &l, const glm::vec3
 	glEnd();
 }
 
+void drawCircle(const glm::vec3 &o, const float rayon, const int nb_segments, const glm::vec3 &color)
+{
+	glBegin(GL_LINE_LOOP);
+
+	glColor3f(color.x, color.y, color.z);
+
+	for (int a = 0; a < 360; a += 360 / nb_segments)
+	{
+		float rad = float(a) / 180 * M_PI;
+		glVertex3f(o.x + cos(rad) * rayon, o.y + sin(rad) * rayon, o.z);
+	}
+
+	glEnd();
+}
+
+void drawFlocon(const glm::vec3& a, const glm::vec3& b, int nb_iterations)
+{
+	if (nb_iterations <= 1)
+	{
+		glBegin(GL_LINE_LOOP);
+		glVertex3f(a.x, a.y, a.z);
+		glVertex3f(b.x, b.y, b.z);
+		glEnd();
+	}
+	else
+	{
+		// On calcule les 3 points intermédiaires
+		glm::vec3 p1, p2, p3;
+
+		// Longueur des nouveaux segments
+		float delta_x = (b.x - a.x) / 3.0;
+		float delta_y = (b.y - a.y) / 3.0;
+
+		p1 = glm::vec3(a.x + delta_x,
+			a.y + delta_y,
+			a.z);
+
+		p2 = glm::vec3(a.x + 1.5 * delta_x + sin(M_PI / 3.) * delta_y, 
+			a.y - sin(M_PI / 3.) * delta_x + 1.5 * delta_y,
+			a.z);
+
+		p3 = glm::vec3(a.x + 2.0 * delta_x,
+			a.y + 2.0 * delta_y,
+			a.z);
+
+		// Dessin des 4 segments du flocon
+		drawFlocon(a, p1, nb_iterations - 1);
+		drawFlocon(p1, p2, nb_iterations - 1);
+		drawFlocon(p2, p3, nb_iterations - 1);
+		drawFlocon(p3, b, nb_iterations - 1);
+	}
+}
+
 
 void display(void)
 {
-/* clear all pixels  */
-   glClear (GL_COLOR_BUFFER_BIT);
-
-/* draw white polygon (rectangle) with corners at
- * (0.25, 0.25, 0.0) and (0.75, 0.75, 0.0) 
- */
-	glm::vec3 a(0.05, 0.5, 0.);
-
+	/* clear all pixels  */
+    glClear (GL_COLOR_BUFFER_BIT);
 
 	glLineWidth(1);
+
+	// Cercles
+	glm::vec3 origine;
+	float rayon;
+	float pourcentage;
+	int nb_cercles;
+
+    // Triangles
+	glm::vec3 a(0.1, 1.5, 0.);
 
 	drawTriangleRectIsocele(a, 0.3, white);
 
 	a.x += 0.35;
-
 	drawTriangleRectIsocele(a, 0.2, blue);
 
 	a.x += 0.25;
-
 	drawTriangleRectIsocele(a, 0.1, green);
 
+	// Cercles 1
+	origine = glm::vec3(0.2, 1., 0.);
+	rayon = 0.1;
+	pourcentage = 0.4;
+	nb_cercles = 5;
 
+	for (int i = 0; i < nb_cercles; i++)
+	{
+		drawCircle(origine, rayon, 50, red);
+		origine.x += rayon * pourcentage;
+		rayon += rayon * pourcentage;
+	}
 
-	//drawTriangle(a, b, c ,blue);
+	// Cercles 2
+	origine = glm::vec3(0.3, 0.3, 0.);
+	rayon = 0.2;
+	pourcentage = 0.75;
+	nb_cercles = 7;
 
-   //glBegin(GL_POLYGON);
-   //glColor3f (1.0, 1.0, 1.0);
-   //   glVertex3f (0.25, 0.25, 0.0);
-   //   glVertex3f (0.75, 0.25, 0.0);
-   //   glVertex3f (0.75, 0.75, 0.0);
-   //   glVertex3f (0.25, 0.75, 0.0);
-   //glEnd();
+	for (int i = 0; i < nb_cercles; i++)
+	{
+		drawCircle(origine, rayon, 50, white);
+		origine.x += rayon;
+		rayon *= pourcentage;
+		origine.x += rayon;
+	}
+
+	// Flocon
+	glm::vec3 f1(1., 1., 0.);
+	glm::vec3 f2(1.8, 1., 0.);
+	glm::vec3 f3(1.4, 1.8, 0.);
+
+	drawFlocon(f1, f2, 5);
+	drawFlocon(f2, f3, 5);
+	drawFlocon(f3, f1, 5);
 
 /* Swap the buffers to show the one
  * on which we writed
@@ -111,7 +192,7 @@ void init (void)
 /* initialize viewing values  */
    glMatrixMode(GL_PROJECTION);
    glLoadIdentity();
-   glOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
+   glOrtho(0.0, 2.0, 0.0, 2.0, -2.0, 2.0);
 }
 
 /*
